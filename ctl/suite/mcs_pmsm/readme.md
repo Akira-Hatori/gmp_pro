@@ -1,75 +1,72 @@
 # GMP CTL PMSM Motor Control Suite
 
-PMSM id = 0 controller.
+PMSM id = 0 控制器。
 
-## Abstract
+## 摘要
 
-BOOSTXL-3PHGANINV (48-V Three-Phase Inverter With Shunt-Based In-Line Motor Phase Current Sensing Evaluation Module) is used to implement a Motor Driver. You may find related notes here: https://www.ti.com/tool/BOOSTXL-3PHGANINV
+BOOSTXL-3PHGANINV (48-V Three-Phase Inverter With Shunt-Based In-Line Motor Phase Current Sensing Evaluation Module) 用于实现电机驱动。相关说明见：https://www.ti.com/tool/BOOSTXL-3PHGANINV
 
-### Current & Voltage Measurement 
+### 电流与电压测量
 
-1. Current Measurement
+1. 电流测量
 
-Current Measurement using a $0.005 \,\Omega$ resister, and INA240A1 provide 20 gain.
+电流测量使用 $0.005 \,\Omega$ 分流电阻，和 INA240A1 提供 20 倍增益。
 
-2. Voltage Measurement
+2. 电压测量
 
-Voltage Measurement gain is 
+电压测量增益为
 $$
 A_v = \frac{4.22 \,k\Omega}{100 \,k\Omega + 4.22 \,k\Omega} = 0.04049127
 $$
 
-
-Meanwhile, Voltage filter is cut frequency is 
+同时，电压滤波器截止频率为
 $$
 f_{vc} = \frac{1}{2\pi RC}=\frac{1}{2\pi \times 4.22 \,k\Omega \times 0.033 \,\mu F}= 1.1434\,kHz
 $$
 
-3. Motor Parameters
+3. 电机参数
 
-The target motor is a PMSM motor, which parameter is stored in  `ctl/component/motor_control/preset_motor_param/GBM2804H_100T.h`
-
-
-
-## Encoder Hardware
-
-The system use [AS5048A](https://docs.rs-online.com/0657/A700000006921305.pdf) as absolute position encoder. This is a 14-bit rotary position sensor with SPI interface. 
+目标电机为 PMSM，参数存于 `ctl/component/motor_control/preset_motor_param/GBM2804H_100T.h`
 
 
 
-## Software Structure
+## 编码器硬件
 
-GMP CTL motor_control suite owns a PMSM controller with absolute position encoder based on CTL nano framework. Main parts is defined in `pmsm_servo.h`, some initialization code is defined in `src/pmsm_servo.c` .
+系统使用 [AS5048A](https://docs.rs-online.com/0657/A700000006921305.pdf) 作为绝对位置编码器。这是一款带 SPI 接口的 14 位旋转位置传感器。
 
-A set of invoke examples is defined in `implement` folder. `impelement/user_common` owns basic usage of `pmsm_servo`, and these code are unrelated to MCU. Other code related with running platform is defined in each folder.
 
-| Folder        | Platform                                                     |
-| ------------- | ------------------------------------------------------------ |
+
+## 软件结构
+
+GMP CTL motor_control 套件基于 CTL nano 框架，包含带绝对位置编码器的 PMSM 控制器。主要部分定义于 `pmsm_servo.h`，部分初始化代码定义于 `src/pmsm_servo.c` 。
+
+一组调用示例定义在 `implement` 文件夹。`impelement/user_common` 包含 `pmsm_servo` 的基本用法，这些代码与 MCU 无关。与运行平台相关的代码定义在各自文件夹中。
+
+| 文件夹        | 平台                                                     |
+| ------------- | -------------------------------------------------------- |
 | user_f28x     | [Launch Pad F280039](https://www.ti.com/tool/LAUNCHXL-F280039C) |
-| user_simulink | GMP SIL                                                      |
+| user_simulink | GMP SIL                                                  |
 | user_stm32    | [NUCLEO-G474RE](https://www.st.com/en/evaluation-tools/nucleo-g474re.html) |
 
+可在 `impelement/<platform>/ctrl_settings.h` 中更改电机配置。
 
-
- You may change motor config in `impelement/<platform>/ctrl_settings.h`.
-
-| MACROS                   | Notes                                                    |
+| 宏                       | 说明                                                      |
 | ------------------------ | -------------------------------------------------------- |
-| BUILD_LEVEL              | Select Build Level. Open loop, Current loop, Speed loop. |
-| CONTROLLER_FREQUENCY     | Select Controller Frequency.                             |
-| CONTROLLER_PWM_CMP_MAX   | 比较器最大值                                             |
-| MTR_ENCODER_LINES        | 编码器线数                                               |
-| MTR_ENCODER_OFFSET       | 编码器偏置                                               |
-| MTR_CTRL_CURRENT_LOOP_BW | 控制器电流带宽                                           |
-| MTR_CTRL_SPEED_LOOP_BW   | 控制器速度带宽                                           |
+| BUILD_LEVEL              | 选择构建级别。开环、电流环、速度环。                       |
+| CONTROLLER_FREQUENCY     | 选择控制器频率。                                           |
+| CONTROLLER_PWM_CMP_MAX   | 比较器最大值                                               |
+| MTR_ENCODER_LINES        | 编码器线数                                                 |
+| MTR_ENCODER_OFFSET       | 编码器偏置                                                 |
+| MTR_CTRL_CURRENT_LOOP_BW | 控制器电流带宽                                             |
+| MTR_CTRL_SPEED_LOOP_BW   | 控制器速度带宽                                             |
 
 控制器参数还通过电机预设和控制器预设读入。
 
 ``` C
-// invoke motor parameters
+// 引入电机参数
 #include <ctl/component/motor_control/motor_preset/GBM2804H_100T.h>
 
-// invoke motor controller parameters
+// 引入电机控制器参数
 #include <ctl/component/motor_control/controller_preset/TI_3PH_GAN_INV.h>
 ```
 下一步计划：增加弱磁控制的代码
@@ -77,67 +74,67 @@ A set of invoke examples is defined in `implement` folder. `impelement/user_comm
 
 
 
-## GMP SIL Simulation Environment
+## GMP SIL 仿真环境
 
-GMP SIL Project: `gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_simulink`
+GMP SIL 项目：`gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_simulink`
 
-You may open the `motor_control_simulink.sln` using Visual Studio 2022, and `gmp_pmsm_sil_mdl.slx` using MATLAB Simulink 2024 or later.
+可使用 Visual Studio 2022 打开 `motor_control_simulink.sln`，并使用 MATLAB Simulink 2024 或更高版本打开 `gmp_pmsm_sil_mdl.slx`。
 
-> NOTICE: 
+> 注意：
 >
->  If you have not install GMP CTL Simulink Library, you should install this library firstly, by running `gmp_pro\slib\install_gmp_simulink_lib.m`
+>  如果尚未安装 GMP CTL Simulink 库，应先运行 `gmp_pro\slib\install_gmp_simulink_lib.m` 进行安装
 
-You should run Visual Studio Solution firstly, and then run the simulation model.
+应先运行 Visual Studio 解决方案，然后运行仿真模型。
 
- You may change `ctl_fmif_output_stage_routine` function in `implement\user_simulink\ctl_interface.h`monitor routine to spy on the key variables.
+可在 `implement\user_simulink\ctl_interface.h` 中更改 `ctl_fmif_output_stage_routine` 监视例程以监控关键变量。
 
 
 
-## C28x Motor Control Environment
+## C28x 电机控制环境
 
-Project Location: `gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_c28x_example`
+项目位置：`gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_c28x_example`
 
-You may import the project by CCS12.
+可使用 CCS12 导入该项目。
 
-If there're some product don't exist, you should run `gmp_pro\tools\facilities_generator\gmp_fac_install.bat`to install these TI CCS product.
+如果某些产品不存在，应运行 `gmp_pro\tools\facilities_generator\gmp_fac_install.bat` 来安装这些 TI CCS 产品。
 
-device peripheral config
+设备外设配置
 
-Encoder SPI port, Mode 
+编码器 SPI 端口、模式
 
-| Signal          | Peripheral | GPIO Index |
-| --------------- | ---------- | ---------- |
-| SPI CS          | GPIO       | GPIO48     |
-| SPI SIMO (PICO) | SPIA       | GPIO8      |
-| SPI SOMI (POCI) | SPIA       | GPIO17     |
-| SPI CLK         | SPIA       | GPIO9      |
+| 信号          | 外设     | GPIO 索引 |
+| --------------- | -------- | ---------- |
+| SPI CS          | GPIO     | GPIO48     |
+| SPI SIMO (PICO) | SPIA     | GPIO8      |
+| SPI SOMI (POCI) | SPIA     | GPIO17     |
+| SPI CLK         | SPIA     | GPIO9      |
 
-print SCI port, baud rate 115200 bps
+串口打印，波特率 115200 bps
 
-| Signal  | Peripheral | GPIO Index |
+| 信号  | 外设 | GPIO Index |
 | ------- | ---------- | ---------- |
 | SCIA RX | SCIA       | GPIO28     |
 | SCIA TX | SCIA       | GPIO29     |
 
-EPWM channel, 10 kHz PWM
+EPWM 通道，10 kHz PWM
 
-| Signal  | Peripheral | GPIO index |
-| ------- | ---------- | ---------- |
-| PWM U H | ePWM1      | GPIO0      |
-| PWM U L | ePWM1      | GPIO1      |
-| PWM V H | ePWM2      | GPIO2      |
-| PWM V L | ePWM2      | GPIO3      |
-| PWM W H | ePWM6      | GPIO10     |
-| PWM W L | ePWM6      | GPIO11     |
+| 信号  | 外设   | GPIO index |
+| ------- | ------ | ---------- |
+| PWM U H | ePWM1  | GPIO0      |
+| PWM U L | ePWM1  | GPIO1      |
+| PWM V H | ePWM2  | GPIO2      |
+| PWM V L | ePWM2  | GPIO3      |
+| PWM W H | ePWM6  | GPIO10     |
+| PWM W L | ePWM6  | GPIO11     |
 
-Calculate Time Base period
+计算时间基周期
 $$
 Period = \frac{120 \,MHz}{10\,kHz\times 2}=6000
 $$
 
-ADC Channel, ADCA for U phase, ADCB for V phase, ADCC for W phase, all of them is high priority.
+ADC 通道，ADCA 用于 U 相，ADCB 用于 V 相，ADCC 用于 W 相，均为高优先级。
 
-| Signal | Peripheral | ADC Channel |
+| 信号 | 外设 | ADC 通道 |
 | ------ | ---------- | ----------- |
 | VDC    | ADC A      | ADC A6      |
 | VA     | ADC A      | ADC A2      |
@@ -149,31 +146,31 @@ ADC Channel, ADCA for U phase, ADCB for V phase, ADCC for W phase, all of them i
 
 
 
-## STM32G474 Motor Control Environment
+## STM32G474 电机控制环境
 
-Project Location: `gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_stm32g474_hrtim`
+项目位置：`gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_stm32g474_hrtim`
 
-You may edit this project with STM32 CubeMX and Open the project using Keil. Keil will generate GMP files every compiling time.
+可使用 STM32 CubeMX 编辑本项目，并使用 Keil 打开。每次编译时 Keil 会生成 GMP 文件。
 
-Encoder SPI Interface
+编码器 SPI 接口
 
-| Signal   | Peripheral | GPIO     |
+| 信号   | 外设 | GPIO     |
 | -------- | ---------- | -------- |
 | SPI CS   | SPI2       | GPIO B10 |
 | SPI SIMO | SPI2       | GPIO B15 |
 | SPI SOMI | SPI2       | GPIO B14 |
 | SPI CLK  | SPI2       | GPIO B13 |
 
-print USART interface, connected by Debugger.
+串口（USART）接口，通过调试器连接。
 
-| Signal    | Peripheral | GPIO |
+| 信号    | 外设  | GPIO |
 | --------- | ---------- | ---- |
 | USART1 TX | USART1     | PA2  |
 | USART1 RX | USART1     | PA3  |
 
-HRTIM PWM channel
+HRTIM PWM 通道
 
-| Signal       | Peripheral     | Application  | GPIO |
+| 信号       | 外设         | 应用         | GPIO |
 | ------------ | -------------- | ------------ | ---- |
 | PWM Phase UH | HRTIM Timer E1 | PWM Phase UH | PC8  |
 | PWM Phase UL | HRTIM Timer E2 | PWM Phase UL | PC9  |
@@ -182,9 +179,9 @@ HRTIM PWM channel
 | PWM Phase WH | HRTIM Timer B1 | PWM Phase WH | PA10 |
 | PWM Phase WL | HRTIM Timer B2 | PWM Phase WL | PA11 |
 
-ADC Resources
+ADC 资源
 
-| Signal | Peripheral      | GPIO |
+| 信号 | 外设             | GPIO |
 | ------ | --------------- | ---- |
 | IA     | ADC1 Channel 1  | PA0  |
 | VA     | ADC1 Channel 2  | PA1  |
@@ -194,55 +191,52 @@ ADC Resources
 | IC     | ADC3 Channel 12 | PB0  |
 | VC     | ADC3 Channel 1  | PB1  |
 
-User interface 
+用户界面
 
-| Signal      | Usage       | GPIO |
+| 信号      | 用途        | GPIO |
 | ----------- | ----------- | ---- |
-| User Button | GPIO Input  | PC13 |
-| User LED    | GPIO Output | PA5  |
+| User Button | GPIO 输入   | PC13 |
+| User LED    | GPIO 输出   | PA5  |
 
 
 
-## STM32G431 Motor Control Environment
+## STM32G431 电机控制环境
 
 
 
-project path: `gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_stm32g431_tim`
+项目路径：`gmp_pro\ctl\suite\motor_control\pmsm\projects\motor_control_stm32g431_tim`
 
-Encoder SPI Interface
+编码器 SPI 接口
 
-| Signal   | Peripheral | GPIO |
+| 信号   | 外设 | GPIO |
 | -------- | ---------- | ---- |
 | SPI CS   | SPI2       | PB1  |
 | SPI MOSI | SPI2       | PB15 |
 | SPI MISO | SPI2       | PB14 |
 | SPI CLK  | SPI2       | PB13 |
 
-print USART interface, connected by Debugger.
 
+串口（USART）接口，通过调试器连接。
 
-
-| Signal    | Peripheral | GPIO |
+| 信号    | 外设  | GPIO |
 | --------- | ---------- | ---- |
 | USART2 TX | USART2     | PA2  |
 | USART2 RX | USART2     | PA3  |
 
-TIM PWM channel
+TIM PWM 通道
 
+| 信号       | 外设    | 应用         | GPIO |
+| ------------ | ------- | ------------ | ---- |
+| PWM Phase UH | TIM1 CH1 | PWM Phase UH | PA8  |
+| PWM Phase UL | TIM1 CH1 | PWM Phase UL | PA11 |
+| PWM Phase VH | TIM1 CH2 | PWM Phase VH | PC1  |
+| PWM Phase VL | TIM1 CH2 | PWM Phase VL | PB0  |
+| PWM Phase WH | TIM1 CH3 | PWM Phase WH | PC2  |
+| PWM Phase WL | TIM1 CH3 | PWM Phase WL | PB9  |
 
+ADC 资源 ???
 
-| Signal       | Peripheral | Application  | GPIO |
-| ------------ | ---------- | ------------ | ---- |
-| PWM Phase UH | TIM1 CH1   | PWM Phase UH | PA8  |
-| PWM Phase UL | TIM1 CH1   | PWM Phase UL | PA11 |
-| PWM Phase VH | TIM1 CH2   | PWM Phase VH | PC1  |
-| PWM Phase VL | TIM1 CH2   | PWM Phase VL | PB0  |
-| PWM Phase WH | TIM1 CH3   | PWM Phase WH | PC2  |
-| PWM Phase WL | TIM1 CH3   | PWM Phase WL | PB9  |
-
-ADC Resources ???
-
-| Signal | Peripheral | GPIO |
+| 信号 | 外设      | GPIO |
 | ------ | ---------- | ---- |
 | IB     | ADC1 IN1   | PA0  |
 | UC     | ADC1 IN2   | PA1  |
@@ -252,10 +246,9 @@ ADC Resources ???
 | UA     | ADC2 IN5   | PC4  |
 | VDC    | ADC2 IN6   | PC0  |
 
-User interface
+用户界面
 
-| Signal      | Usage       | GPIO |
+| 信号      | 用途        | GPIO |
 | ----------- | ----------- | ---- |
-| User Button | GPIO Input  | PC13 |
-| User LED    | GPIO Output | PA5  |
-
+| User Button | GPIO 输入   | PC13 |
+| User LED    | GPIO 输出   | PA5  |

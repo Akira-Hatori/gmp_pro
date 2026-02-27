@@ -1,44 +1,40 @@
-# Core of GMP
+# GMP核心
 
-This folder contain all core functions of GMP.
+此文件夹包含GMP的所有核心功能。
 
+## GMP头文件
 
+GMP核心提供两类头文件。
+一类是C通用头文件。如果你需要编写C语言文件，请使用 `<core/gmp_core.h>`。
+另一类是C++风格头文件。如果你需要编写C++文件，请使用 `<core/gmp_core.hpp>`。
 
-## Headers of GMP
+如果你的程序框架是C框架，可以包含 `<core/gmp_core.h>`，并调用 `gmp_entry();`。
+该函数为C风格函数，C头文件不会影响你的项目框架。
 
-GMP core provide two parts of headers. 
-One is the c general header. If you need to complete a C programing file, please use the `<core/gmp_core.h>`. 
-Another is the C++ style header. If you need to complete a C++ programing file, please use the `<core/gmp_core.hpp>`.
+相反，如果你的程序框架是C++框架，可以包含 `<core/gmp_core.hpp>`，并调用 `gmp_entry()` 函数。该函数为 `extern "C"`。
 
-If your program framework is a C framework, you may include `<core/gmp_core.h>`, and call the `gmp_entry();`. 
-This function is C style function and the C header will not disturb your project framework.
+GMP库将接管整个程序。你可以在 `<user/user_main.cpp>` 中启动你的程序。
 
-On the contrary, if your program framework is a C++ framework, you may include `<core/gmp_core.hpp>`, and call the `gmp_entry()` function. This function is `extern "C"`.
+## GMP核心组件
 
-GMP library will take over the whole program. You may start your program in `<user/user_main.cpp>`.
+GMP核心包含以下5个关键部分，如下表所示：
 
-## Components of GMP core
+| 部件名称         | 文件夹   | 说明                                                         |
+| -------------- | ------- | ------------------------------------------------------------ |
+| 标准化         | `std`   | 提供所有跨平台支持，如标准错误码、标准编译器宏、标准GMP类型定义等。 |
+| 内存管理       | mm      | 内部内存管理模块。                                           |
+| 进程管理       | pm      | 提供一套工具包，方便用户管理进程。                           |
+| 设备外设统一抽象 | dev     | 提供标准的设备外设抽象接口。                                 |
+| FGPA支持       | fpga    | 提供GMP相关的FPGA支持Verilog代码和HLS代码。                  |
+| 工具集         | util    | 包含一组实用工具。                                           |
 
-GMP core has the following 5 key parts, which are shown in the follow.
+## 设备接口
 
-| Part Name | Folder  | Comments |
-| --------- | ------  | -------  |
-| Standardize | `std` | This folder provides all the cross platform support. Such as standard error code, standard compiler macros, and standard GMP typedef. |
-| memory management | mm | Internal Memory Management module. |
-| Process management | pm | This folder provide a set of tool kits for user to manage their processes. |
-| device peripheral unify abstract | dev | This folder provides the standard device peripheral abstract. |
-| FGPA support | fpga | This folder provides the GMP related FPGA support Verilog code and HLS code. |
-| utilities tools | util | This folder contains a set of utilities. |
+所有设备接口函数都定义在 `core/dev` 文件夹中。
 
+`devif.h` 是GMP库的主要设备接口头文件。所有通信方式都基于该头文件定义。该文件提供了所有结构体定义和初始化函数。
 
-
-## device interface
-
-All the device interface function is defined in `core/dev` folder. 
-
-`devif.h` is the main device interface for the GMP library. All the communication method is defined based on the header. This file provide all the structure definition and init function.
-
-the init function is aim at init all the members of the structure.
+初始化函数用于初始化结构体的所有成员。
 
 这个文件中定义了全部的通信接口，所有的通信过程将会基于这个文件中提供的结构体展开。这些结构体将通信分为半双工、全双工、特殊的通信协议（IIC或者CAN）等。
 

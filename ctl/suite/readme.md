@@ -1,16 +1,12 @@
-# Controller Suite 
+# 控制器套件
 
-This folder provides a set of controllers. Which based on the modules provided by CTL.
+此文件夹提供一组控制器。基于CTL提供的模块。
 
+所有套件按组名进行组织：
 
+MCS：电机控制套件
 
-All the suites are organized by group named by:
-
-
-
-MCS: Motor Control Suite
-
-| Suite Name          | Project Description                  |
+| 套件名称            | 项目描述                             |
 | ------------------- | ------------------------------------ |
 | mcs_pmsm            | id=0的带传感器永磁同步电机控制器     |
 | mcs_pmsm_smo        | 带SMO的永磁同步电机控制器            |
@@ -21,19 +17,13 @@ MCS: Motor Control Suite
 | mcs_acm_fe          | 带磁链观测器的无传感器异步电机控制器 |
 | mcs_bldc_smo        | 带SMO和Hall传感器的高性能BLDC控制器  |
 
+DPS：数字电源套件
 
+PGS：电力网格套件
 
+PHIL：GMP电源硬件在环
 
-
-DPS: Digital Power Suite
-
-PGS: Power Grid Suite
-
-
-
-PHIL: GMP Power Hardware In Loop
-
-HIL GMP Hardware In Loop
+HIL GMP硬件在环
 
 
 
