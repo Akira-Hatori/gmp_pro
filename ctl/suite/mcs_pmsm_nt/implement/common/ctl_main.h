@@ -101,9 +101,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         // ramp generator
         ctl_step_slope_f_pu(&rg);
 
-        // Step auto turn pos encoder
-        ctl_step_autoturn_pos_encoder(&pos_enc, EQEP_getPosition(EQEP_Encoder_BASE));
-
+        // Calculate Motor Speed
         ctl_step_spd_calc(&spd_enc);
 
 #if BUILD_LEVEL > 3
@@ -119,9 +117,15 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_current_controller(&mtr_ctrl);
 
 #ifdef ENABLE_SMO
-        ctrl_gt udc = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
-        ctrl_gt v_alpha = ctl_mul(udc, mtr_ctrl.vab0.dat[phase_alpha]);
-        ctrl_gt v_beta = ctl_mul(udc, mtr_ctrl.vab0.dat[phase_beta]);
+        ctrl_gt udc_for_smo = ctl_mul(CTL_CTRL_CONST_1_OVER_SQRT3, mtr_ctrl.udc);
+
+#if (PWM_MODULATOR_USING_NEGATIVE_LOGIC == 1)
+        ctrl_gt v_alpha = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_alpha]);
+        ctrl_gt v_beta = ctl_mul(udc_for_smo, - mtr_ctrl.vab0.dat[phase_beta]);
+#else
+        ctrl_gt v_alpha = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_alpha]);
+        ctrl_gt v_beta = ctl_mul(udc_for_smo, mtr_ctrl.vab0.dat[phase_beta]);
+#endif
         ctl_step_pmsm_smo(
             // SMO object
             &smo,
