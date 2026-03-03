@@ -13,8 +13,11 @@
 
 #include <gmp_core.h>
 
-// MATLAB UDP Helper
-#include <tools/gmp_sil/udp_helper_v2/asio_udp_helper.hpp>
+// 必须在包含 asio_tcp_helper 之前定义该宏以启用服务器模式
+#define ASIO_TCP_HELPER_SERVER_MODE
+
+// MATLAB TCP Helper
+#include <tools/gmp_sil/tcp_helper/asio_tcp_helper.hpp>
 
 // Trace RT module
 #include <ctrl_rt_trace.h>
@@ -23,7 +26,7 @@
 #include <stdlib.h>
 
 // ASIO helper object
-asio_udp_helper* helper = nullptr;
+asio_tcp_helper* helper = nullptr;
 
 // ASIO helper will send or receive message via this structure.
 half_duplex_ift simulink_rx;
@@ -75,7 +78,7 @@ void gmp_csp_startup(void)
     // default_debug_dev = &default_debug_dev_place_holder;
 
     // Setup ASIO helper
-    helper = asio_udp_helper::parse_network_config(GMP_ASIO_CONFIG_JSON);
+    helper = asio_tcp_helper::parse_network_config(GMP_ASIO_CONFIG_JSON);
 
     if (helper == nullptr)
     {
