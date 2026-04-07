@@ -84,6 +84,7 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * @return The fractional part of x.
  */
 #define ctrl_mod_1(x) ((float)(((float)(x)) - ((int32_t)(x))))
+//#define ctrl_mod_1(x) fmodf(x, 1.0f)
 
 /** @} */ // end of MC_TYPE_CONVERSION_FLOAT group
 
@@ -167,6 +168,10 @@ GMP_STATIC_INLINE float abs_static_inline(float A)
  * This can be used for conditional compilation in other parts of the library.
  */
 #define CTRL_GT_IS_FLOAT
+
+#ifndef CTL_EPSILON
+#define CTL_EPSILON (float2ctrl(1e-6f)) /**< @brief Threshold for zero-division avoidance. */
+#endif
 
 /** @} */ // end of MC_FLOAT_MACROS group
 
