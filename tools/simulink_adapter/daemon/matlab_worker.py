@@ -43,9 +43,17 @@ class SimulinkWorker:
             self.eng.cd(matlab_model_dir, nargout=0)
             self.eng.addpath(matlab_model_dir, nargout=0)
             self.eng.load_system(file_stem, nargout=0)
+            try:
+                self.eng.open_system(file_stem, nargout=0)
+            except Exception:
+                pass
             return file_stem
 
         self.eng.load_system(model_name, nargout=0)
+        try:
+            self.eng.open_system(model_name, nargout=0)
+        except Exception:
+            pass
         return model_name
 
     def _trim_text(self, text: Any, max_len: int = 12000) -> str:
@@ -145,7 +153,7 @@ class SimulinkWorker:
     def run_simulation(
         self,
         model_name: str,
-        params: dict,
+        params: dict | None,
         model_path: str | None = None,
         result_vars: list[str] | None = None,
     ) -> dict:
@@ -176,10 +184,8 @@ class SimulinkWorker:
             resolved_model = self._prepare_model(model_name=model_name, model_path=model_path)
             result["diagnostics"]["resolved_model"] = resolved_model
 
-            print("[Worker] 正在下发参数到 Workspace...")
-            for key, value in params.items():
-                self.eng.workspace[key] = float(value) if isinstance(value, (int, float)) else value
-                print(f"  -> {key} = {value}")
+            if params:
+                print("[Worker] 提示: 当前模式下 params 已忽略，控制量由外部内核提供")
 
             print("[Worker] 仿真运行中，请等待...")
             start_time = time.time()
