@@ -1,0 +1,6 @@
+{
+  "ScopeData1": ["speed_ref", "speed_fb"],
+  "ScopeData2": ["iq_ref", "iq_fb"],
+  "ScopeData3": ["torque", "dc_bus_voltage"],
+  "ScopeData5": []
+}
