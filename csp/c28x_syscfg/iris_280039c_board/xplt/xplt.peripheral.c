@@ -45,6 +45,7 @@ adc_gt idc_src;
 
 extern iic_halt iic_bus;
 extern gpio_halt user_led;
+extern gpio_halt gpio_beep;
 
 //
 // Function to configure I2C A in FIFO mode.
@@ -115,6 +116,8 @@ void setup_peripheral(void)
 
     user_led = SYSTEM_LED;
 
+    gpio_beep = IRIS_GPIO1;
+
 }
 
 
@@ -134,14 +137,6 @@ interrupt void MainISR(void)
     // Call GMP Timer
     //
     gmp_step_system_tick();
-
-    //
-    // Blink LED
-    //
-//    if (gmp_base_get_system_tick() % 1000 < 500)
-//        GPIO_WritePin(SYSTEM_LED, 0);
-//    else
-//        GPIO_WritePin(SYSTEM_LED, 1);
 
     //
     // Clear the interrupt flag
@@ -312,63 +307,112 @@ interrupt void INT_IRIS_UART_RS232_RX_ISR(void)
 
 #endif // BOARD_SELECTION == GMP_IRIS
 
+//=================================================================================================
+// Debug interface
+
 // a local small cache size, capable of covering the depth of the hardware FIFO (typically 16 bytes)
 #define ISR_LOCAL_BUF_SIZE 16
 
-void at_device_flush_rx_buffer()
+extern gmp_datalink_t dl;
+
+void flush_dl_tx_buffer()
+{
+    // Send head
+    gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_hdr_ptr(&dl), gmp_dev_dl_get_tx_hw_hdr_size(&dl), 10);
+
+    // Send data body, if necessary
+    if (gmp_dev_dl_get_tx_hw_pld_size(&dl) > 0)
+    {
+        gmp_hal_uart_write(IRIS_UART_USB_BASE, gmp_dev_dl_get_tx_hw_pld_ptr(&dl), gmp_dev_dl_get_tx_hw_pld_size(&dl),
+                           10);
+    }
+}
+
+void flush_dl_rx_buffer()
 {
     uint16_t fifoLevel;
-    uint16_t rxBuf[ISR_LOCAL_BUF_SIZE];
+    data_gt rxBuf[ISR_LOCAL_BUF_SIZE];
 
-    // Read all FIFO content
-    while ((fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE)) > 0)
+    // read all FIFO messages
+    fifoLevel = SCI_getRxFIFOStatus(IRIS_UART_USB_BASE);
+
+    if (fifoLevel > 0)
     {
-        // Get data
-        SCI_readCharArray(IRIS_UART_USB_BASE, rxBuf, fifoLevel);
+        SCI_readCharArray(IRIS_UART_USB_BASE, (uint16_t*)rxBuf, fifoLevel);
 
-        // send to AT device
-        at_device_rx_isr(&at_dev, (char*)rxBuf, fifoLevel);
+        // Lock-free ring queue pushed into the protocol stack (very fast, O(1))
+        gmp_dev_dl_push_str(&dl, rxBuf, fifoLevel);
     }
 }
 
 interrupt void INT_IRIS_UART_USB_RX_ISR(void)
 {
-    uint32_t rxStatus;
+    flush_dl_rx_buffer();
 
-    // clear receive FIFO
-    at_device_flush_rx_buffer();
-
-    // Fault reaction
-    rxStatus = SCI_getRxStatus(IRIS_UART_USB_BASE);
-
-    if (rxStatus & SCI_RXSTATUS_OVERRUN)
+    //
+    // deal with overrun
+    //
+    if (SCI_getRxStatus(IRIS_UART_USB_BASE) & SCI_RXSTATUS_OVERRUN)
     {
-        // 仅处理溢出错误：清除溢出标志位，而不是复位整个 FIFO
-        // C2000 DriverLib 通常通过写入 RXFFOVRCLR 位来清除
-        // 如果没有直接API，可以使用 HWREG 操作，或者保持 resetRxFIFO 但仅针对 Overrun
-
-        // 修正建议：只在确实溢出卡死时才 Reset，普通 Error 不要 Reset
         SCI_clearOverflowStatus(IRIS_UART_USB_BASE);
-
-        // 如果必须使用 resetRxFIFO，请确保仅在严重故障下使用
-        // SCI_resetRxFIFO(IRIS_UART_USB_BASE);
-    }
-
-    if (rxStatus & SCI_RXSTATUS_ERROR)
-    {
-        // 对于 Frame Error / Parity Error (比如噪声 0xFF)
-        // 读取数据寄存器通常会自动清除这些错误标志
-        // 这里只需要做一个软件复位给 SCI 状态机（不清除 FIFO），或者单纯清除标志
-        // 绝对不要调用 SCI_resetRxFIFO() !!!
     }
 
     //
-    // Clear the interrupt flag
+    // Clear interrupt flags
     //
-    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF | SCI_INT_RXERR);
-
-    //
-    // Acknowledge the interrupt
-    //
+    SCI_clearInterruptStatus(IRIS_UART_USB_BASE, SCI_INT_RXFF);
     Interrupt_clearACKGroup(INT_IRIS_UART_USB_RX_INTERRUPT_ACK_GROUP);
 }
+
+////
+
+
+//=========================================================
+// 1. SPI 读写底层函数封装
+//=========================================================
+
+// 向 FPGA 写入寄存器
+// 协议: 帧1=[15位=1(写), 14:8=地址, 7:0=保留] -> 帧2=[16位数据]
+void SPI_writeReg(uint16_t addr, uint16_t data)
+{
+    // 构造写命令，最高位为 0
+    uint16_t cmd = 0x0000 | ((addr & 0x7F) << 8); // 最高位自然是 0
+
+    // 将两个 16-bit word 压入 TX FIFO 发送
+    SPI_writeDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE, cmd);
+    SPI_writeDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE, data);
+
+    // 等待 FPGA 接收并返回两个 16-bit word
+    // 虽然是写操作，但是 SPI 全双工会收到对方发回的废数据
+    while(SPI_getRxFIFOStatus(IRIS_SPI_FPGA_BRIDGE_BASE) < SPI_FIFO_RX2);
+
+    // 把接收到的这两个废数据读出，清空 RX FIFO，防止影响后续通信
+    SPI_readDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE);
+    SPI_readDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE);
+}
+
+// 从 FPGA 读取寄存器
+// 协议: 帧1=[15位=0(读), 14:8=地址, 7:0=保留] -> 帧2=[16位占位符数据(0x0000)]
+uint16_t SPI_readReg(uint16_t addr)
+{
+    // 构造读命令，最高位为 1
+    uint16_t cmd = 0x8000 | ((addr & 0x7F) << 8); // 强制把最高位拉高
+    uint16_t dummy_data = 0x0000; // 用于产生时钟的哑数据
+
+    // 压入命令帧和数据帧
+    SPI_writeDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE, cmd);
+    SPI_writeDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE, dummy_data);
+
+    // 等待接收 2 个字
+    while(SPI_getRxFIFOStatus(IRIS_SPI_FPGA_BRIDGE_BASE) < SPI_FIFO_RX2);
+
+    // 读出的第一个字是发送命令帧时 FPGA 返回的（通常是状态位或全0，直接丢弃）
+    SPI_readDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE);
+
+    // 读出的第二个字才是我们要的真实数据帧
+    uint16_t read_data = SPI_readDataBlockingFIFO(IRIS_SPI_FPGA_BRIDGE_BASE);
+
+    return read_data;
+}
+
+
