@@ -35,14 +35,40 @@ Example:
 }
 ```
 
-## 4. Run simulation from Python
+## 4. Quick launch (recommended)
+
+Set model path once in terminal:
 
 ```powershell
-python agent_silhelper/run_local_job.py \
+setx GMP_LOCAL_MODEL_PATH "D:/WorkDocuments/Github/gmp_pro/ctl/suite/mcs_pmsm_nt/project/simulate/MCS_STD_PMSM_MODEL_2022b.slx"
+```
+
+Then you can run with a short command:
+
+```powershell
+python tools/agent_silhelper/run_local_job.py
+```
+
+Or use one-click batch wrapper:
+
+```powershell
+tools/agent_silhelper/run_local_quick.bat
+```
+
+You can also pass model path directly to the wrapper:
+
+```powershell
+tools/agent_silhelper/run_local_quick.bat "D:/path/to/your/model.slx"
+```
+
+## 5. Full command (manual)
+
+```powershell
+python tools/agent_silhelper/run_local_job.py \
   --model-path "D:/WorkDocuments/Github/gmp_pro/ctl/suite/mcs_pmsm_nt/project/simulate/MCS_STD_PMSM_MODEL_2022b.slx" \
-  --scope-map "agent_silhelper/scope_channel_map.example.json" \
+  --scope-map "tools/agent_silhelper/scope_channel_map.example.json" \
   --scope-vars ScopeData1 ScopeData2 ScopeData3 ScopeData5 \
-  --output "agent_silhelper/run_result.json"
+  --output "tools/agent_silhelper/run_result.json"
 ```
 
 ## Output format
