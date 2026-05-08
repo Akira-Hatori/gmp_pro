@@ -125,7 +125,7 @@ class LocalSimulinkRunner:
         sim_console = ""
 
         try:
-            self.eng.sim(model_name, nargout=0)
+            self.eng.eval(f"out = sim('{model_name}'); assignin('base', 'out', out);", nargout=0)
         except matlab.engine.MatlabExecutionError as exc:
             sim_status = "failed"
             sim_error = str(exc)
