@@ -1,0 +1,11 @@
+{
+  "ScopeData1": [ "rotor_angle" ],
+  "ScopeData2": [ "rotor_speed", "torque" ],
+  "ScopeData3": [ "stator_iq", "stator_id" ],
+  "ScopeData5": [ "target_velocity", "measured_velocity" ],
+  "ScopeData6": [ "id", "iq" ],
+  "ScopeData7": [ "id_ref", "iq_ref" ],
+  "ScopeData8": [ "vd", "vq" ],
+  "ScopeData9": [ "rotor_angle", "pwm_u" ],
+  "ScopeData10": [ "pwm_v", "pwm_w" ]
+}
