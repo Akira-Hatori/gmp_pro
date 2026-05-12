@@ -15,9 +15,10 @@ except ImportError:
 _THIS_DIR = Path(__file__).resolve().parent
 _AGENT_DIR = _THIS_DIR.parent
 _DEFAULT_LOG_DIR = _AGENT_DIR / "log"
-_DEFAULT_SCOPE_MAP = _THIS_DIR / "scope_channel_map.example.json"
-_DEFAULT_RAW_OUTPUT = _DEFAULT_LOG_DIR / "raw.json"
-_DEFAULT_PROCESSED_OUTPUT = _DEFAULT_LOG_DIR / "processed.json"
+_SIMULATION_DIR = _DEFAULT_LOG_DIR / "simulation"
+_DEFAULT_SCOPE_MAP = _SIMULATION_DIR / "scope_channel_map.json"
+_DEFAULT_RAW_OUTPUT = _SIMULATION_DIR / "raw.json"
+_DEFAULT_PROCESSED_OUTPUT = _SIMULATION_DIR / "processed.json"
 
 
 def _default_model_path() -> Optional[str]:

@@ -4,7 +4,7 @@
     "agent_log": {
       "type": "directory",
       "path": "../log",
-      "description": "Log directory under tools/agent/log. Contains build.log, expected_metrics.txt, processed.json, raw.json, run_exe.log, and agent-side automation logs.",
+      "description": "Log directory under tools/agent/log. Contains build/build.log, expected_metrics.txt, simulation/processed.json, simulation/raw.json, build/run_exe.log, and agent-side automation logs.",
       "allowed_extensions": [
         ".log",
         ".txt",
@@ -50,10 +50,15 @@
     "build_bat_path": "build_sln.bat",
     "start_exe_bat_path": "start_exe.bat",
     "sim_bat_path": "../agent_silhelper/run_local_quick.bat",
+
+    "parameter_header": "../../../ctl/suite/mcs_pmsm_nt/src/paras.generated.h", 
+    "optimization_history": "../log/optimization_history.jsonl",
     "sim_model_path": "../../../ctl/suite/mcs_pmsm_nt/project/simulate/MCS_STD_PMSM_MODEL_2022b.slx",
-    "build_agent_log": "../log/build.log",
-    "run_exe_log": "../log/run_exe.log",
-    "simulation_result": "../log/processed.json",
+
+
+    "build_agent_log": "../log/build/build.log",
+    "run_exe_log": "../log/build/run_exe.log",
+    "simulation_result": "../log/simulation/processed.json",
     "evaluation_config": "../log/evaluation_config.json",
     "evaluation_result": "../log/evaluation_result.json",
     "evaluation_summary": "../log/evaluation_summary.txt",

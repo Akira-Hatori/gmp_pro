@@ -30,8 +30,8 @@ set "SLN_DIR=%REPO_ROOT%\ctl\suite\mcs_pmsm_nt\project\simulate"
 set "FAC_DIR=%REPO_ROOT%\tools\facilities_generator"
 
 rem Log directory required by agent:
-rem   <repo_root>\tools\agent\log
-set "LOG_DIR=%REPO_ROOT%\tools\agent\log"
+rem   <repo_root>\tools\agent\log\build
+set "LOG_DIR=%REPO_ROOT%\tools\agent\log\build"
 set "BUILD_LOG=%LOG_DIR%\build.log"
 
 rem Important include directories.

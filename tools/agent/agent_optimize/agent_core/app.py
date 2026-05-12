@@ -6,7 +6,13 @@ from .config import load_project_context
 from .llm import LLMClient
 from .prompts import SYSTEM_PROMPT
 from .tool_registry import ToolRegistry
-from .tools import register_automation_tools, register_resource_tools, register_evaluation_tools
+from .tools import (
+    register_automation_tools,
+    register_resource_tools,
+    register_evaluation_tools,
+    register_parameter_edit_tools,
+    register_optimization_tools,
+)
 
 
 def build_registry(ctx) -> ToolRegistry:
@@ -14,6 +20,8 @@ def build_registry(ctx) -> ToolRegistry:
     register_resource_tools(registry, ctx)
     register_automation_tools(registry, ctx)
     register_evaluation_tools(registry, ctx)
+    register_parameter_edit_tools(registry, ctx)
+    register_optimization_tools(registry, ctx)
     return registry
 
 

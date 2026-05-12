@@ -29,5 +29,5 @@ if not exist "%MODEL_PATH%" (
     exit /b 20
 )
 
-python "%SCRIPT_DIR%run_local_job.py" --model-path "%MODEL_PATH%" --scope-map "%SCRIPT_DIR%scope_channel_map.example.json"
+python "%SCRIPT_DIR%run_local_job.py" --model-path "%MODEL_PATH%" --scope-map "%SCRIPT_DIR%..\log\simulation\scope_channel_map.json"
 exit /b %ERRORLEVEL%

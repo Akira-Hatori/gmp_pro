@@ -29,7 +29,7 @@ call :FIND_REPO_ROOT "%SEARCH_START%"
 if errorlevel 1 goto ERR_REPO_ROOT
 
 set "SLN_DIR=%REPO_ROOT%\ctl\suite\mcs_pmsm_nt\project\simulate"
-set "LOG_DIR=%REPO_ROOT%\tools\agent\log"
+set "LOG_DIR=%REPO_ROOT%\tools\agent\log\build"
 set "RUN_LOG=%LOG_DIR%\run_exe.log"
 
 set "CONFIGURATION=Release"
