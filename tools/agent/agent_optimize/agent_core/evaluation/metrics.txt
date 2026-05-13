@@ -1,0 +1,419 @@
+1. final_value
+
+含义：最终值。
+
+公式：
+
+final_value = values[-1]
+
+也就是取最后一个采样点。
+
+适合评价：
+
+最终速度
+最终角度
+最终电流
+
+注意：它不取平均，只取最后一个点。若信号有纹波，可能不稳定。
+
+2. peak_value
+
+含义：最大值。
+
+公式：
+
+peak_value = max(values)
+
+适合评价：
+
+最大速度
+最大电流
+最大转矩
+最大角度
+3. min_value
+
+含义：最小值。
+
+公式：
+
+min_value = min(values)
+
+适合评价：
+
+反向速度
+最低电流
+负向越界
+
+你这次反转问题就可以用 min_value 抓到。
+
+4. peak_to_peak
+
+含义：峰峰值。
+
+公式：
+
+peak_to_peak = max(values) - min(values)
+
+适合评价：
+
+全程波动范围
+角度振荡幅度
+电流峰峰值
+
+注意：这是全程峰峰值，不是稳态窗口内峰峰值。
+
+5. mean_absolute_error
+
+含义：平均绝对误差。
+
+公式：
+
+MAE = mean(abs(signal[i] - target[i]))
+
+如果 target_value 是常数：
+
+MAE = mean(abs(signal[i] - target_value))
+
+适合评价：
+
+Id 接近 0
+Iq 接近目标值
+速度全程跟踪误差
+角度保持误差
+
+注意：它是全程平均，不只看稳态。
+
+6. rms_error
+
+含义：均方根误差。
+
+公式：
+
+RMS = sqrt(mean((signal[i] - target[i])^2))
+
+如果 target_value 是常数：
+
+RMS = sqrt(mean((signal[i] - target_value)^2))
+
+适合评价：
+
+速度全程跟踪误差
+电流跟踪误差
+转矩跟踪误差
+
+它比 mean_absolute_error 更惩罚大误差。
+
+7. steady_state_error
+
+含义：稳态误差。
+
+当前公式：
+
+默认取最后 10% 样本
+steady_state_error = mean(abs(signal_tail[i] - target_tail[i]))
+
+如果 target_value 是常数：
+
+steady_state_error = mean(abs(signal_tail[i] - target_value))
+
+默认窗口：
+
+window_ratio = 0.1
+
+也就是最后 10% 样本。
+
+如果 config 里写：
+
+"window": 0.2
+
+就是最后 20%。
+
+如果写：
+
+"window": 50
+
+就是最后 50 个采样点。
+
+注意：当前 steady_state_error 是绝对误差，不是百分比误差。
+
+例如目标速度 62.3 rad/s，稳态误差 2% 应该写：
+
+good_threshold = 62.3 × 0.02 = 1.246
+
+这一点你之前的 Main2.json 是对的。
+
+8. overshoot
+
+这是你现在发现问题的指标。
+
+当前公式：
+
+target_final = target_value 或 target_signal 的最后一个值
+initial = signal[0]
+direction = target_final - initial
+
+如果是上升响应：
+
+amount = max(signal) - target_final
+
+如果是下降响应：
+
+amount = target_final - min(signal)
+
+然后：
+
+amount = max(0, amount)
+
+如果：
+
+"normalize": true
+
+则：
+
+overshoot = amount / abs(target_final)
+
+如果：
+
+"normalize": false
+
+则：
+
+overshoot = amount
+当前问题
+
+你希望的是：
+
+overshoot = max(signal) - steady_state_value
+
+但当前代码用的是：
+
+overshoot = max(signal) - target_value
+
+所以你这次：
+
+target_value = 62.3
+max(signal) ≈ 45.997
+
+于是：
+
+max(signal) - target_value = 45.997 - 62.3 < 0
+
+被截断成：
+
+0
+
+因此 overshoot = 0。
+
+你想要的工程公式应改为
+
+建议改成：
+
+steady_value = mean(最后 window_ratio 的 signal)
+amount = max(signal) - steady_value
+amount = max(0, amount)
+
+如果归一化：
+
+overshoot_ratio = amount / abs(steady_value)
+
+但这里要注意：如果稳态值是负数，例如你这次最终反转，公式会变复杂。更稳妥的是再加一个专门指标：
+
+reverse_overspeed = max(0, -min(signal)) / abs(target_value)
+
+否则“反转”会和“超调”概念混在一起。
+
+9. rise_time
+
+含义：上升时间，默认 10% 到 90%。
+
+当前公式：
+
+initial = signal[0]
+target_final = target_value 或 target_signal[-1]
+delta = target_final - initial
+lower_level = initial + lower_ratio × delta
+upper_level = initial + upper_ratio × delta
+
+默认：
+
+lower_ratio = 0.1
+upper_ratio = 0.9
+
+然后找第一次穿过 lower_level 和 upper_level 的时间：
+
+rise_time = t_upper - t_lower
+
+如果是下降响应，代码会自动按下降方向找 crossing。
+
+注意：如果信号没有达到 10% 或 90%，会报 metric error。
+
+10. settling_time
+
+含义：调节时间 / 稳定时间。
+
+当前公式：
+
+target_final = target_value 或 target_signal[-1]
+band = tolerance 或 tolerance_ratio × abs(target_final)
+
+默认：
+
+tolerance_ratio = 0.02
+
+也就是 ±2%。
+
+然后从前往后找第一个时刻 t[i]，要求从 i 到最后所有样本都满足：
+
+abs(signal[j] - target_final) <= band
+
+返回：
+
+settling_time = t[i] - t[0]
+
+如果一直没能保持在误差带内，则报错。
+
+注意：它目前是从整个信号开头算起，不会自动从 start_time_s=0.7 或 load_step_time_s=1.0 开始算。若你要按启动后或扰动后计算，需要后续扩展 time_window 或 event_time。
+
+11. ripple
+
+含义：稳态纹波。
+
+当前公式：
+
+默认取最后 10% 样本
+ripple = max(tail) - min(tail)
+
+默认窗口：
+
+window_ratio = 0.1
+
+适合评价：
+
+转矩纹波
+Iq 纹波
+Id 纹波
+速度稳态波动
+
+注意：它不是 RMS 纹波，只是尾部窗口峰峰值。
+
+12. zero_crossing_count
+
+含义：过零次数 / 过参考值次数。
+
+当前公式：
+
+diff[i] = signal[i] - reference[i]
+统计 diff 符号变化次数
+
+如果没有 reference，默认：
+
+reference = 0
+
+如果有 target_value，evaluator 会把它作为 reference。
+
+适合评价：
+
+角度振荡次数
+速度围绕 0 抖动次数
+误差穿越目标次数
+
+注意：精确等于 0 的点会被忽略，不改变符号状态。
+
+13. linear_fit_r2
+
+含义：线性拟合优度。
+
+当前公式：
+
+对 signal 做最小二乘直线拟合：
+
+y = a × t + b
+
+然后计算：
+
+R² = 1 - residual_sum_squares / total_sum_squares
+
+如果没有时间向量，就用样本索引作为 x。
+
+适合评价：
+
+速度是否线性增长
+恒加速度任务中速度曲线是否接近直线
+
+注意：它只判断线性程度，不判断斜率是否等于用户目标加速度。
+
+14. response_delay
+
+含义：响应延迟。
+
+当前公式：
+
+level = signal_initial + threshold_ratio × (target_final - signal_initial)
+
+默认：
+
+threshold_ratio = 0.5
+
+也就是 50% 响应点。
+
+如果 target 是常数：
+
+target_crossing_time = signal_start_time
+
+如果 target 是信号：
+
+target_crossing_time = target_signal 首次穿过同一 level 的时间
+
+最后：
+
+response_delay = actual_crossing_time - target_crossing_time
+
+正值表示实际信号滞后。
+
+15. stability
+
+含义：尾部稳定性成本，越小越稳定。
+
+当前逻辑：
+
+默认取最后 10% 样本。
+
+如果没有 target：
+
+stability = std(signal_tail)
+
+如果有 target：
+
+error_tail = signal_tail - target_tail
+stability = std(error_tail)
+
+如果：
+
+include_bias = true
+
+则再加上尾部平均误差绝对值：
+
+stability = std(error_tail) + abs(mean(error_tail))
+
+如果：
+
+"normalize": true
+
+则会按信号或目标的最大尺度归一化。
+
+16. numerical_derivative
+
+含义：数值微分。
+
+当前公式：
+
+dy_dt[i] = (y[i+1] - y[i]) / (t[i+1] - t[i])
+t_derivative[i] = (t[i] + t[i+1]) / 2
+
+返回的是一个新的派生信号，不是标量指标。
+
+适合生成：
+
+速度 → 加速度
+角度 → 速度
+电流 → 电流变化率

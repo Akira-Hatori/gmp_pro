@@ -18,7 +18,7 @@ Dependencies: standard library only
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, Mapping, Optional
 import json
 
 from ..config import ProjectContext
@@ -109,19 +109,29 @@ class EvaluationTools:
     def evaluate_simulation_result(
         self,
         *,
+        evaluation_config_path: Optional[str] = None,
         allow_unknown_metrics: bool = False,
         include_traceback: bool = False,
         summary_max_chars: int = 4000,
     ) -> str:
         """
-        Evaluate processed.json with evaluation_config.json and write outputs.
+        Evaluate processed.json with an evaluation config JSON and write outputs.
+
+        Args:
+            evaluation_config_path:
+                Optional explicit path to the evaluation config JSON. When omitted,
+                the path configured by automation.evaluation_config is used.
 
         Outputs:
             ../log/evaluation_result.json
             ../log/evaluation_summary.txt
         """
         processed_json_path = self._processed_json_path()
-        evaluation_config_path = self._evaluation_config_path()
+        if evaluation_config_path:
+            evaluation_config_path_obj = Path(evaluation_config_path).expanduser().resolve()
+        else:
+            evaluation_config_path_obj = self._evaluation_config_path()
+        evaluation_config_path = evaluation_config_path_obj
         evaluation_result_path = self._evaluation_result_path()
         evaluation_summary_path = self._evaluation_summary_path()
 
@@ -248,13 +258,20 @@ def register_evaluation_tools(registry: ToolRegistry, ctx: ProjectContext) -> Ev
             "function": {
                 "name": "evaluate_simulation_result",
                 "description": (
-                    "Run deterministic evaluation using ../log/processed.json and "
-                    "../log/evaluation_config.json, then write ../log/evaluation_result.json "
-                    "and ../log/evaluation_summary.txt."
+                    "Run deterministic evaluation using the configured processed.json and evaluation config JSON. "
+                    "If evaluation_config_path is provided, use it; otherwise use automation.evaluation_config. "
+                    "Then write evaluation_result.json and evaluation_summary.txt."
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
+                        "evaluation_config_path": {
+                            "type": "string",
+                            "description": (
+                                "Optional. Explicit path to the evaluation config JSON. "
+                                "Use the job/Main JSON path when it already contains task_type, objective, signals, and metrics."
+                            ),
+                        },
                         "allow_unknown_metrics": {
                             "type": "boolean",
                             "description": (
@@ -275,6 +292,7 @@ def register_evaluation_tools(registry: ToolRegistry, ctx: ProjectContext) -> Ev
             },
         },
         lambda args: tool.evaluate_simulation_result(
+            evaluation_config_path=args.get("evaluation_config_path"),
             allow_unknown_metrics=bool(args.get("allow_unknown_metrics", False)),
             include_traceback=bool(args.get("include_traceback", False)),
             summary_max_chars=int(args.get("summary_max_chars", 4000)),

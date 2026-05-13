@@ -162,6 +162,7 @@ class OptimizationTools:
         self,
         *,
         header_path: Optional[str] = None,
+        evaluation_config_path: Optional[str] = None,
         allow_unknown_metrics: bool = False,
         include_traceback: bool = False,
         history_path: Optional[str] = None,
@@ -184,6 +185,7 @@ class OptimizationTools:
             "status": "unknown",
             "stage": "start",
             "header_path": str(resolved_header_path),
+            "evaluation_config_path": str(Path(evaluation_config_path).expanduser().resolve()) if evaluation_config_path else None,
             "optimization_history_path": str(resolved_history_path),
             "closed_loop_success": False,
             "evaluation_success": False,
@@ -211,6 +213,7 @@ class OptimizationTools:
             return self._json_dumps(context)
 
         evaluation_result_text = self.evaluation_tools.evaluate_simulation_result(
+            evaluation_config_path=evaluation_config_path,
             allow_unknown_metrics=allow_unknown_metrics,
             include_traceback=include_traceback,
             summary_max_chars=min(max_chars, 8000),
@@ -433,6 +436,10 @@ def register_optimization_tools(registry: ToolRegistry, ctx: ProjectContext) -> 
                             "type": "string",
                             "description": "Optional path to paras.generated.h. If omitted, use agent_project.json automation/resources default.",
                         },
+                        "evaluation_config_path": {
+                            "type": "string",
+                            "description": "Optional path to main/evaluation JSON. If omitted, use the configured automation.evaluation_config path.",
+                        },
                         "allow_unknown_metrics": {
                             "type": "boolean",
                             "description": "Optional. Default false. Passed to evaluate_simulation_result.",
@@ -459,6 +466,7 @@ def register_optimization_tools(registry: ToolRegistry, ctx: ProjectContext) -> 
         },
         lambda args: tool.run_one_tuning_iteration(
             header_path=args.get("header_path"),
+            evaluation_config_path=args.get("evaluation_config_path"),
             allow_unknown_metrics=bool(args.get("allow_unknown_metrics", False)),
             include_traceback=bool(args.get("include_traceback", False)),
             history_path=args.get("history_path"),
